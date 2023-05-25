@@ -1,0 +1,24 @@
+#! /bin/bash
+
+# TODO Put in checks that cpanm and cpanm-reporter are actually installed.
+
+/usr/bin/cpanm "$@"
+# TODO Actually have this user a proper wrapper that removes the current one
+# from the path.
+
+# Run cpanm-reporter afterwards to upload the test results. Ideally this would
+# only be if cpanm tried to install something, not if, for instance, I bungled
+# typing a module name. But we can't use &&, because we _do_ want reports from
+# when tests failed and so cpanm failed. And unfortunately cpanm returns the
+# same $? (1) regardless of why it fails.
+#
+# Also, cpanm doesn't clearly distinguish IGNORE from FAIL reports, so
+# cpanm-reporter can erroneously report the former as the latter. So confirm
+# before actually reporting:
+# https://rt.cpan.org/Public/Bug/Display.html?id=100467
+read -p "Send Cpan report? [y] " -n 1
+echo
+if [[ ${REPLY,} != n ]]
+then
+  cpanm-reporter
+fi
