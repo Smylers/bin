@@ -1,0 +1,2 @@
+#! /bin/sh
+perl -m"$1" -E "say $1->VERSION // die qq[No VERSION in $1\n]"
