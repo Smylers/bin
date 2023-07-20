@@ -1,0 +1,38 @@
+#! /usr/bin/perl
+
+# 2fa
+# 
+# Gets a two-factor authentication TOTP code for the system with the specified
+# tag and displays it or copies it to the clipboard
+
+use v5.14;
+use warnings;
+
+use Getopt::Long qw<GetOptions :config gnu_getopt>;
+use IPC::System::Simple qw<capture>;
+use Clipboard;
+
+GetOptions \my %opt,
+qw<
+  print|p
+  clipboard|clip|c
+>;
+$opt{clipboard} = 1 if keys %opt == 0;
+
+my $Prog = $0 =~ s!.*/!!r;
+
+die "$Prog: No tag specified\n" if !@ARGV;
+my $tag = shift;
+die "$Prog: Unexpected arguments: @ARGV\n" if @ARGV;
+
+my $key = capture qw<secret-tool lookup 2fa>, $tag;
+# XXX Better error handling?
+
+my $code = capture qw<oathtool --base32 --digits 6 --totp>, $key;
+# What to do if no code?
+chomp $code;
+
+Clipboard->copy_to_all_selections($code) if $opt{clipboard};
+say $code                                if $opt{print};
+# XXX OK to copy to all? Better just to copy to clipboard but leave X
+# selection? A different module? Shelling out to xclip?
