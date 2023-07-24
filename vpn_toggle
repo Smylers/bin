@@ -1,0 +1,123 @@
+#! /usr/bin/perl
+
+# vpn_toggle
+#
+# Toggles a Nework Manager VPN, displaying an on-screen notifcation
+
+
+use v5.24;
+use warnings;
+use utf8;
+use open ':locale';
+use experimental qw<signatures>;
+
+use Getopt::Long qw<GetOptions :config gnu_getopt>;
+use Path::Tiny qw<path>;
+use IPC::System::Simple qw<capture run>;
+use String::ShellQuote qw<shell_quote>;
+
+
+GetOptions \my %opt,
+qw<
+  icon|i=s
+  password_tag|password|p=s
+  otp_tag|otp|2fa|2=s
+> or exit 1;
+
+my $network = shift or die "$0: No VPN name specified\n";
+die "$0: Unexpected arguments ‘@ARGV’\n" if @ARGV;
+
+# A sub for notifiying for this network. The title and options are the same
+# each time; only the description changes, so curry the unchanging bits in:
+my $notify =
+do
+{
+  my @opt = (-t => 3000);
+
+  my $icon = icon_path($opt{icon} // lc $network =~ tr/ /_/r);
+  push @opt, -i => $icon if defined $icon && -r $icon;
+
+  sub ($desc) { run 'notify-send', @opt, $desc, "$network VPN" }
+};
+
+my @cmd = qw<nmcli connection>;
+my ($up, $network_id) = vpn_state($network);
+if ($up)
+{
+  $notify->('Disconnecting');
+  run @cmd, 'down', $network;
+}
+
+else
+{
+  $notify->('Connecting');
+  push @cmd, 'up', $network;
+
+  # If 2FA is required then it needs to provided by a password file — neither a
+  # command-line argument nor stdin will do. And because a password file is
+  # being specified, Network Manager needs that to supply the password as well,
+  # even when Network Manager already knows the password.
+  #
+  # So look up the password where Network Manager has stored it, emit both that
+  # and the 2FA one-time password in the required format, and have Bash pretend
+  # that is a file to pass to the command:
+  if (defined $opt{otp_tag})
+  {
+    run 'bash', -c => (shell_quote @cmd, 'passwd-file')
+        . qq[ <(
+            echo -n vpn.secrets.password:
+            secret-tool lookup setting-name vpn setting-key password \\
+                connection-uuid $network_id
+            echo -en "\n"vpn.secrets.otp:
+            2fa --print $opt{otp_tag}
+          )
+        ];
+  }
+
+  # Without 2FA, none of that is necessary:
+  else
+  {
+    run @cmd;
+  }
+}
+
+
+sub icon_path($name)
+# returns a path to an icon file with the specified name
+{
+  # If it's a full path to a file that exists, use that:
+  return $name if -f $name;
+
+  # Otherwise try looking for it in a particular directory, either as-is or
+  # with a common extension added:
+  my $dir = path '~/share/icons/';
+  return if !-d $dir;
+  foreach my $ext ('', qw<.svg .png>)
+  {
+    my $path = $dir->child("$name$ext");
+    return $path if -f $path;
+  }
+
+  # Nothing found, so we don't have an icon:
+  return;
+  # TODO Default VPN icon if none for this specific connection?
+}
+
+
+sub vpn_state($wanted_network)
+# returns the state of the VPN: a 2-element list of whether it's up, and its ID
+{
+  foreach (capture qw<nmcli connection>)
+  {
+    my ($network, $id, $type, $dev) = split /\s{2,}/;
+
+    if ($type eq 'vpn' && $network eq $wanted_network)
+    {
+      # The device column shows the network interface being used when the VPN
+      # is connected, two hyphens otherwise:
+      return $dev ne '--', $id;
+    }
+  }
+
+  die "$0: VPN connection ‘$wanted_network’ not found.\n";
+}
