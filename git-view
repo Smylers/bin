@@ -1,0 +1,5 @@
+#! /bin/sh
+#
+# View the specified Git commit in a Vim window
+
+git show "$@" | gview - -c 'setfiletype git'
