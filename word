@@ -21,7 +21,7 @@ fail("Two many argments") if @ARGV;
 
 $pattern = "^$pattern\$";
 $pattern =~ s/\./\\w/g;
-$pattern =~ s/(?!<[{,])\d+/\\w{$&}/g;
+$pattern =~ s/(?<![{,\d])\d+/\\w{$&}/g;
 
 my @lang = grep { $opt{$_} } qw<american british>;
 fail("Multiple languages specified: @lang") if @lang > 1;
