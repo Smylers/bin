@@ -16,7 +16,7 @@ qw<
   full|huge|f
   american|usa|a
   british|uk|b
->;
+> or exit 2;
 my $pattern = shift or fail("No pattern");
 fail("Two many argments") if @ARGV;
 
