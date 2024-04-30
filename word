@@ -1,0 +1,46 @@
+#! /usr/bin/perl
+
+# word
+#
+# Displays any word matching a pattern
+
+use v5.20;
+use warnings;
+use experimental qw<signatures>;
+
+use Getopt::Long qw<GetOptions :config gnu_getopt>;
+use IPC::System::Simple qw<run>;
+
+GetOptions \my %opt,
+qw<
+  full|huge|f
+  american|usa|a
+  british|uk|b
+>;
+my $pattern = shift or fail("No pattern");
+fail("Two many argments") if @ARGV;
+
+$pattern = "^$pattern\$";
+$pattern =~ s/\./\\w/g;
+$pattern =~ s/(?!<[{,])\d+/\\w{$&}/g;
+
+my @lang = grep { $opt{$_} } qw<american british>;
+fail("Multiple languages specified: @lang") if @lang > 1;
+my $dict = '/usr/share/dict/' . (@lang ? "$lang[0]-english" : 'words');
+$dict = symlink_target($dict) . '-huge' if $opt{full};
+fail("Dictionary $dict not found") if !-f $dict;
+run 'ack', $pattern, $dict;
+
+
+sub symlink_target($dict)
+{
+  $dict = readlink $dict while -l $dict;
+
+  $dict;
+}
+
+sub fail($msg)
+{
+  my $name = $0 =~ s#.*/##r;
+  die "$name: $msg\n";
+}
