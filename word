@@ -9,7 +9,6 @@ use warnings;
 use experimental qw<signatures>;
 
 use Getopt::Long qw<GetOptions :config gnu_getopt>;
-use IPC::System::Simple qw<run>;
 
 GetOptions \my %opt,
 qw<
@@ -29,7 +28,8 @@ fail("Multiple languages specified: @lang") if @lang > 1;
 my $dict = '/usr/share/dict/' . (@lang ? "$lang[0]-english" : 'words');
 $dict = symlink_target($dict) . '-huge' if $opt{full};
 fail("Dictionary $dict not found") if !-f $dict;
-run 'ack', $pattern, $dict;
+exec 'ack', $pattern, $dict;
+die "$0: Running ack failed.\n";
 
 
 sub symlink_target($dict)
