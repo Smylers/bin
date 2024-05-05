@@ -1,0 +1,28 @@
+#! /usr/bin/perl
+
+# an
+#
+# an wrapper which defaults to -l 1 and provides --full, like word
+
+use v5.14;
+use warnings;
+
+use List::AllUtils qw<pairmap>;
+use Getopt::Long qw<GetOptions :config gnu_getopt pass_through>;
+
+GetOptions \my %opt,
+qw<
+  full|huge|f
+  length|l=i
+  minimum|m=i
+> or exit 2;
+
+# Default to only showing single-word anagrams:
+$opt{length} = 1 if !$opt{length} && !$opt{minimum};
+
+# Have -f use the full dictionary:
+$opt{dict} = '/usr/share/dict/british-english-huge' if delete $opt{full};
+# XXX Full language support, like in word?
+
+exec '/usr/games/an', (pairmap { "--$a" => $b } %opt), @ARGV;
+# XXX Find wrappee automatically.
