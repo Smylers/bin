@@ -15,6 +15,7 @@ qw<
   full|huge|f
   american|usa|a
   british|uk|b
+  include|i=s
 > or exit 2;
 my $pattern = shift or fail("No pattern");
 fail("Two many argments") if @ARGV;
@@ -22,6 +23,12 @@ fail("Two many argments") if @ARGV;
 $pattern = "^$pattern\$";
 $pattern =~ s/\./\\w/g;
 $pattern =~ s/(?<![{,\d])\d+/\\w{$&}/g;
+
+if (exists $opt{include})
+{
+  my $prefix = join '', map { "(?=.*$_)" } split //, $opt{include};
+  $pattern = $prefix . $pattern;
+}
 
 my @lang = grep { $opt{$_} } qw<american british>;
 fail("Multiple languages specified: @lang") if @lang > 1;
