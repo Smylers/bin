@@ -1,0 +1,12 @@
+#!/bin/sh
+#
+# duff
+#
+# diff -u (recursively)
+
+exec colordiff -ur "$@"
+# TODO  Add in more flags — consider -p for .c programs and -F with regexes for
+# other things. See these emails for suggestions:
+# https://www.nntp.perl.org/group/perl.perl5.porters/;msgid=3D64BAAA.4050305%40rowman.com
+# https://www.nntp.perl.org/group/perl.perl5.porters/;msgid=533D273D4014D411AB1D00062938C4D9021A1B3B%40hotel.npl.co.uk
+
