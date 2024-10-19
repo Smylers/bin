@@ -1,0 +1,11 @@
+#! /bin/sh
+
+# Open all of the supplied files. Use -n to just open them with the system-
+# default application, even if I haven't explicitly defined a personal default
+# (so the same as double-clicking in a file manager would do). Open in the
+# background, since these will generally be graphical applications and it's
+# handy to have the command prompt back:
+mimeopen -n "$@"
+    
+# TODO Examine whether exo-open would be better. It seems to work on URLs as
+# well as files, which is an advantage.
