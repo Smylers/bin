@@ -1,0 +1,35 @@
+#! /usr/bin/perl
+
+# conv
+#
+# Convert between units. A wrapper round units with more convenient input and
+# output options.
+
+use v5.14;
+use warnings;
+use List::AllUtils qw<first_index>;
+
+
+my @output;
+my $sep_pos = first_index { $_ eq '--' } @ARGV;
+
+# When there's a separator, everything after it is part of the output spec:
+if ($sep_pos >= 0)
+{
+  @output = splice @ARGV, $sep_pos + 1;
+  pop;  # Get rid of the separator.
+}
+
+# Otherwise, just use the final argument as the output:
+else
+{
+  @output = pop;
+}
+
+# Everything else is the input:
+my @input  = @ARGV;
+
+# Run units to show the comveersion. Use the --verbose option to diplay the
+# equality more clearly, rather than just a multiplication factor, and -1 to
+# omit also showing the reverse conversion:
+exec qw<units -v1>, "@input", "@output";
