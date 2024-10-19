@@ -1,0 +1,37 @@
+#! /usr/bin/perl
+
+# Easter
+#
+# Shows the date of next Easter, or Easter in the specified years
+
+use v5.14;
+use warnings;
+
+use DateTime::Moonpig;
+use DateTime::Event::Easter;
+
+
+# If one or more years have been specified, show Easter for each of them:
+if (@ARGV)
+{
+  show_easter(DateTime::Moonpig->new(year => $_)) foreach @ARGV;
+}
+
+# Otherwise show the next Easter after now:
+else
+{
+  show_easter(DateTime::Moonpig->now);
+}
+
+
+sub show_easter
+# shows the next Easter after the specified date
+{
+  my ($date) = @_;
+  
+  state $easter_calculator = DateTime::Event::Easter->new;
+
+  my $easter = $easter_calculator->following($date);
+  say $easter->format_cldr('YYYY MMM d');
+
+}
