@@ -1,0 +1,76 @@
+#! /usr/bin/perl
+
+# episode_info
+#
+# Displays information about episodes of TV or radio programmes from a Topfield
+# PVR.
+
+use v5.14;
+use warnings;
+
+use IO::Uncompress::AnyUncompress;
+# TODO Work out why this couldn't be done with a :gzip(autopop) layer.
+use IO::File qw<SEEK_SET SEEK_CUR>;
+use DateTime;
+
+# TODO Put the format-parsing part in a module, and Cpan it.
+
+
+@ARGV = glob '*.rec{,.gz}' if !@ARGV;
+
+foreach (@ARGV)
+{
+  my $file = IO::Uncompress::AnyUncompress->new($_)
+      or die "Opening $_ failed: $!";
+
+  # The file format is documented at:
+  # http://www.toppy.org.uk/documents/Structure%20of%20Recorded%20File%20in%20TF5000PVR%20%28Feb%2021%202004%29.doc
+
+  $file->read(my $format_id, 4) or die "Reading format ID for $_ failed: $!";
+  if ($format_id ne 'TFrc')
+  {
+    warn "$_ is not a Topfield recording\n";
+    next;
+  }
+
+  $file->seek(0x08, SEEK_SET);
+  $file->read(my $duration, 2)
+      or die "Reading title length for $_ failed: $!";
+  $duration = DateTime::Duration->new(minutes => unpack 'n', $duration);
+
+  # The title and description share a field. This field indicates how much of
+  # that field is the title:
+  $file->seek(0x59, SEEK_SET);
+  $file->read(my $title_length, 1)
+      or die "Reading title length for $_ failed: $!";
+  $title_length = unpack 'C', $title_length;
+
+  # Skip over 1 other field (parental rate) before the combined title and
+  # description:
+  $file->seek(1, SEEK_CUR);
+  $file->read(my $title, $title_length)
+      or die "Reading title for $_ failed: $!";
+
+  # The description immediately follows, terminated by a null byte:
+  local $/ = "\0";
+  no warnings qw<misc>; # 'O' isn't a valid description.
+  my $desc = <$file> or die "Reading description for $_ failed: $!";
+  chomp $desc;
+
+  say "$_: $title -- ", format_duration($duration);
+  say "$desc\n";
+}
+
+
+sub format_duration
+{
+  my ($duration) = @_;
+
+  my $output = $duration->hours . ' h ' . $duration->minutes . ' min';
+
+  # Don't display 0 components:
+  $output =~ s/\b0 \D+//;
+
+  $output;
+}
+
