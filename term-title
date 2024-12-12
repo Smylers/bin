@@ -1,0 +1,16 @@
+#! /usr/bin/env bash
+#
+# term-title
+#
+# Sets the terminal title, and optionally runs a command with the title so set
+
+
+# Set the title to the first argument:
+echo -en "\033]0;$1\007"
+
+# If there are any more arguments, then run them as a command:
+shift
+if [[ "$1" ]]
+then
+  exec "$@"
+fi
