@@ -8,7 +8,7 @@
 for file in "$@"
 do
   mp3_file="${file%.*}.mp3"
-  nice -n 18 avconv -i "$file" "$mp3_file" \
+  nice -n 18 ffmpeg -i "$file" "$mp3_file" \
       && touch -r "$file" "$mp3_file" \
       && rm "$file"
 done
