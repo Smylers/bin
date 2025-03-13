@@ -1,0 +1,8 @@
+#! /bin/bash
+#
+# $
+#
+# Ignore $ character at start of command lines — make it easy to paste in
+# documented commands.
+
+exec "$@"
