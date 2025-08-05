@@ -20,7 +20,6 @@ use String::ShellQuote qw<shell_quote>;
 GetOptions \my %opt,
 qw<
   icon|i=s
-  password_tag|password|p=s
   otp_tag|otp|2fa|2=s
 > or exit 1;
 
