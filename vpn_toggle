@@ -23,8 +23,11 @@ qw<
   otp_tag|otp|2fa|2=s
 > or exit 1;
 
-my $network = shift or die "$0: No VPN name specified\n";
+my $network = shift;
 die "$0: Unexpected arguments ‘@ARGV’\n" if @ARGV;
+
+my ($network_id, $up);
+($network, $network_id, $up) = vpn_state($network);
 
 # A sub for notifiying for this network. The title and options are the same
 # each time; only the description changes, so curry the unchanging bits in:
@@ -40,7 +43,6 @@ do
 };
 
 my @cmd = qw<nmcli connection>;
-my ($up, $network_id) = vpn_state($network);
 if ($up)
 {
   $notify->('Disconnecting');
@@ -104,19 +106,30 @@ sub icon_path($name)
 
 
 sub vpn_state($wanted_network)
-# returns the state of the VPN: a 2-element list of whether it's up, and its ID
+# returns details of the requested or default VPN: name, ID, and whether it's
+# up
 {
-  foreach (capture qw<nmcli connection>)
+  no warnings 'qw';
+  my ($count, $name, $id, $device);
+  foreach (capture qw<nmcli -g type,name,uuid,device connection show>)
   {
-    my ($network, $id, $type, $dev) = split /\s{2,}/;
+    chomp;
+    my ($type, @rest) = split /:/;
+    next unless $type eq 'vpn';
+    ($name, $id, $device) = @rest;
 
-    if ($type eq 'vpn' && $network eq $wanted_network)
-    {
-      # The device column shows the network interface being used when the VPN
-      # is connected, two hyphens otherwise:
-      return $dev ne '--', $id;
-    }
+    # Specified VPN found, so use it:
+    return $wanted_network, $id, $device
+        if defined $wanted_network && $name eq $wanted_network;
+
+    $count++;
   }
 
-  die "$0: VPN connection ‘$wanted_network’ not found.\n";
+  die "$0: VPN $wanted_network not found.\n"     if defined $wanted_network;
+  die "$0: No VPNs defined in NetworkManager.\n" if $count == 0;
+  die "$0: $count VPNs defined in NetworkManager; please specify which to toggle.\n"
+      if $count > 1;
+
+  # Exactly one VPN defined, so use it:
+  ($name, $id, $device);
 }
