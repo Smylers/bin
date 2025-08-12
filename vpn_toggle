@@ -34,12 +34,12 @@ my ($network_id, $up);
 my $notify =
 do
 {
-  my @opt = (-t => 3000);
+  my @opt = (-t => 3000, -a => "$network VPN");
 
   my $icon = icon_path($opt{icon} // lc $network =~ tr/ /_/r);
   push @opt, -i => $icon if defined $icon && -r $icon;
 
-  sub ($desc) { run 'notify-send', @opt, $desc, "$network VPN" }
+  sub ($desc) { run 'notify-send', @opt, $desc}
 };
 
 my @cmd = qw<nmcli connection>;
