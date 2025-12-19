@@ -1,0 +1,18 @@
+#! /bin/sh
+
+# ~/bib/ssh waypipe wrapper
+
+
+# Remove this wrapper from the path:
+wrapper_dir=${0%/*}
+PATH=":$PATH"
+PATH=${PATH#*:$wrapper_dir:}
+
+# If this is a Wayland session then use Waypipe:
+if [ "$XDG_SESSION_TYPE" = wayland ]
+then
+  exec waypipe ssh "$@"
+fi
+
+# Otherwise just run SSH directly:
+exec ssh "$@"
