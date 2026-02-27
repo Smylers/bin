@@ -1,0 +1,6 @@
+#! /bin/bash
+#
+# only_words — filters input lines, displaying only those that are words, as
+# determined by aspell
+
+sort -u | tee >(aspell list) | sort | uniq -u
