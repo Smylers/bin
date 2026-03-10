@@ -5,7 +5,7 @@
 # Open all of the supplied files or directories in whatever applications the
 # desktop environment would use for opening them.
 
-for file in "$@"
+for file
 do
   xdg-open "$file"
 done
