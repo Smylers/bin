@@ -1,0 +1,8 @@
+#! /bin/bash
+#
+# count
+#
+# counts the lines of input and emit that at the end, while still passing the
+# input on to be piped to the next command or displayed in the terminal.
+
+tee >(wc -l)
