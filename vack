@@ -1,0 +1,7 @@
+#! /bin/bash
+
+# vack
+# 
+# Vim Ack: Open Ack search results in Vim, populating its quickfix list
+
+gvim -q <(ack "$@") -c 'norm zv' -c copen
